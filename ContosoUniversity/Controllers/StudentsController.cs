@@ -42,7 +42,7 @@ namespace ContosoUniversity.Controllers
                     break;
             }
 
-            return View(await _context.Students.ToListAsync());
+            return View(await students.AsNoTracking().ToListAsync());
         }
 
         // GET: Students/Details/5
