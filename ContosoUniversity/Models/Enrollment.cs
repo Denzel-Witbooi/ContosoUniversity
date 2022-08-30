@@ -1,4 +1,6 @@
-﻿namespace ContosoUniversity.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace ContosoUniversity.Models
 {
     public enum Grade
     {
@@ -27,6 +29,7 @@
         /// Grade property is nullable
         /// null means a grade isn't known or hasn't been assigned yet.
         /// </summary>
+        [DisplayFormat(NullDisplayText = "No grade")]
         public Grade? Grade { get; set; }
 
         /// <summary>
