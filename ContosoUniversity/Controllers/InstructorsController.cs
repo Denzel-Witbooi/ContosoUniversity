@@ -74,7 +74,36 @@ namespace ContosoUniversity.Controllers
 
         public IActionResult Create()
         {
+            /*
+             *  The HttpGet Create method calls the 
+             *  PopulateAssignedCourseData method not 
+             *  because there might be courses selected 
+             *  but in order to provide an empty collection 
+             *  for the foreach loop in the view 
+             *  (otherwise the view code would throw a 
+             *  null reference exception).
+             */
+
+            /*
+             * The HttpPost Create method adds each selected course 
+             * to the CourseAssignments navigation property 
+             * before it checks for validation errors and adds 
+             * the new instructor to the database. 
+             * Courses are added even if there are model 
+             * errors so that when there are model errors 
+             * (for an example, the user keyed an invalid date), 
+             * and the page is redisplayed with an error message, 
+             * any course selections that 
+             * were made are automatically restored.
+             */
             var instructor = new Instructor();
+
+            /*
+             * Notice that in order to be able to add courses 
+             * to the CourseAssignments navigation property 
+             * you have to initialize the property as an 
+             * empty collection:
+            */
             instructor.CourseAssignments = new List<CourseAssignment>();
             PopulateAssignedCourseData(instructor);
             return View();
@@ -90,7 +119,11 @@ namespace ContosoUniversity.Controllers
                 instructor.CourseAssignments = new List<CourseAssignment>();
                 foreach (var course in selectedCourses)
                 {
-                    var courseToAdd = new CourseAssignment { InstructorID = instructor.ID, CourseID = int.Parse(course) };
+                    var courseToAdd = new CourseAssignment 
+                    { 
+                        InstructorID = instructor.ID, 
+                        CourseID = int.Parse(course) 
+                    };
                     instructor.CourseAssignments.Add(courseToAdd);
                 }
             }
@@ -114,7 +147,8 @@ namespace ContosoUniversity.Controllers
 
             var instructor = await _context.Instructors
                    .Include(i => i.OfficeAssignment)
-                   .Include(i => i.CourseAssignments).ThenInclude(i => i.Course)
+                   .Include(i => i.CourseAssignments)
+                   .ThenInclude(i => i.Course)
                    .AsNoTracking()
                    .FirstOrDefaultAsync(m => m.ID == id);
             if (instructor == null)
@@ -190,6 +224,13 @@ namespace ContosoUniversity.Controllers
 
         private void UpdateInstructorCourses(string[] selectedCourses, Instructor instructorToUpdate)
         {
+            /*
+             * If no checkboxes were selected, 
+             * the code in UpdateInstructorCourses 
+             * initializes the CourseAssignments 
+             * navigation property with an 
+             * empty collection and returns:
+             */
             if (selectedCourses == null)
             {
                 instructorToUpdate.CourseAssignments = new List<CourseAssignment>();
@@ -205,7 +246,12 @@ namespace ContosoUniversity.Controllers
                 {
                     if (!instructorCourses.Contains(course.CourseID))
                     {
-                        instructorToUpdate.CourseAssignments.Add(new CourseAssignment { InstructorID = instructorToUpdate.ID, CourseID = course.CourseID });
+                        instructorToUpdate.CourseAssignments.Add(
+                            new CourseAssignment 
+                            { 
+                                InstructorID = instructorToUpdate.ID, 
+                                CourseID = course.CourseID 
+                            });
                     }
                 }
                 else
@@ -243,6 +289,17 @@ namespace ContosoUniversity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            /*
+             * Does eager loading for the CourseAssignments navigation property. 
+             * You have to include this or EF won't know about related 
+             * CourseAssignment entities and won't delete them. 
+             * To avoid needing to read them here you could configure 
+             * cascade delete in the database.
+             * 
+             * If the instructor to be deleted is assigned as 
+             * administrator of any departments, removes the 
+             * instructor assignment from those departments.
+             */
             Instructor instructor = await _context.Instructors
                .Include(i => i.CourseAssignments)
                .SingleAsync(i => i.ID == id);
